@@ -1,0 +1,64 @@
+`timescale 1ns / 1ps
+
+module top(
+    input clk,
+  //  input wire [1:0] Direction,
+  //  input wire [3:0] Speed,
+    input wire OFF,
+    input wire Comparator_A,
+    input wire [2:0] IPS,
+   input wire Bumper,
+    
+    output wire PWM_A,
+    output wire Forward_A,
+    output wire Backward_A,
+    output wire PWM_B,
+    output wire Forward_B,
+    output wire Backward_B
+ //   output wire Check
+    );
+
+Motor_A m_A(
+        //inputs
+        .clk(clk), 
+        .Direction(Direction_A),
+     //   .Speed(Speed),
+        .Comparator(Comparator_A),
+        .motor_mode(Motor_A_mode),
+        .OFF(OFF),
+        
+        //outputs
+        .PWM(PWM_A),
+        .Forward(Forward_A),
+        .Backward(Backward_A)
+    );
+
+Motor_A m_B(
+        //inputs
+        .clk(clk), 
+        .Direction(Direction_B),
+       // .Speed(Speed),
+        .Comparator(Comparator_A),
+        .motor_mode(Motor_B_mode),
+        .OFF(OFF),
+        
+        //outputs
+        .PWM(PWM_B),
+        .Forward(Forward_B),
+        .Backward(Backward_B)
+    );
+    
+IPS_Controls ips_controls(    
+    //inputs
+    .clk(clk),
+    .IPS(IPS),
+    .Bumper(Bumper),
+    
+    //outputs
+    .Motor_B_mode(Motor_B_mode),
+    .Motor_A_mode(Motor_A_mode),
+    .Direction_A(Direction_A),
+    .Direction_B(Direction_B)
+ //   .Check(Check)
+    );
+endmodule
