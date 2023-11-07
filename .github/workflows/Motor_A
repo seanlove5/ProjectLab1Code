@@ -1,0 +1,100 @@
+`timescale 1ns / 1ps
+
+
+module Motor_A(
+    input clk, // clock 100MHz
+    input Direction, // Switch 1-2 used for motor A direction 
+  //  input [3:0] Speed, // Switch 3-6 used for motor A speed 
+    input Comparator,
+    input motor_mode,
+    input OFF,
+    
+    output reg PWM, // PWM signal  JA1 pin to ENA
+    output reg Forward, // 3.3V  JA2 pin to IN2
+    output reg Backward // 3.3V  JA3 pin to IN1
+    );
+    
+reg [17:0] Counter; // 12-bit counter for PWM
+reg [17:0] Width; // 12-bit width for PWM
+reg Enable; // Enabling Speed register
+
+initial begin
+    // Set all registers to 0 and 1
+    Counter = 0;
+    Width = 0;
+    Enable = 1;
+
+end
+
+always@(posedge clk) begin
+    //value = 100Mhz/(2*desired Frequency) - 1
+    //ourvalue needed : 2499!
+    if (Counter < 4000) Counter <= Counter + 1;
+    else Counter <= 0;
+    
+    if (Counter < Width) PWM <= 1; 
+    else PWM <= 0; 
+    
+end
+
+//wire [1:0] Refresh;
+//assign Refresh = Counter[11:10];
+
+always @ (posedge clk) begin
+    case(Comparator)
+        1'b0: begin
+            Enable = 1;
+        end 
+        1'b1: begin
+            Enable = 1;
+        end
+    endcase
+end
+
+
+
+
+
+always @ (posedge clk) begin
+        // case statements 
+        case(Direction)
+            2'b1 : begin 
+                Forward = 1;
+                Backward = 0;
+            end   
+            2'b0 : begin
+                Forward = 0;
+                Backward = 1;
+            end
+            default : begin
+                Forward = 1;
+                Backward = 0;
+            end
+        endcase   
+  
+         if (Enable == 1 && OFF == 0)
+             case(motor_mode)
+               4'd0: Width = 17'd0000; 
+               4'd1: Width = 17'd2000; 
+               4'd2: Width = 17'd2500;
+               4'd3: Width = 17'd3000;  
+               4'd4: Width = 17'd3500;
+               4'd5: Width = 17'd4000;  
+               default:   Width = 17'd0;                
+             endcase       
+         else
+             Width = 17'd0;
+             
+//         if (motor_mode == 0)
+//            Width = 12'd0000;
+//         if (motor_mode == 1)
+//            Width = 12'd1500;
+//         if (motor_mode == 2)
+//            Width = 12'd2000;
+//         if (motor_mode == 3)
+//            Width = 12'd2500;
+              
+end      
+
+
+endmodule
