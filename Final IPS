@@ -1,1 +1,156 @@
+`timescale 1ns / 1ps
 
+
+module IPS_Controls(
+    input clk,
+    input [2:0] IPS,
+    input Bumper,
+       
+    output reg [5:0] Motor_B_mode,
+    output reg [5:0] Motor_A_mode,
+    output reg Direction_A,
+    output reg Direction_B,
+    output reg Magnet,
+    output reg MagStop
+//    output reg Check
+    );
+    
+reg intersected;   
+reg[27:0] ms_counter_2 = 0; //timer in ms that measures rotate time
+reg[27:0] ms_counter_1 = 0; //counter that counts up to one milisecond 
+reg[27:0] ms_counter_3 = 0;
+reg[4:0] state = Forward; //start forward
+reg[15:0] rotate_timer_1 = 0;
+reg[15:0] rotate_timer_2 = 0;
+reg[15:0] station_timer_1 = 0;
+
+localparam Forward = 1;
+localparam Intersection = 2;
+localparam Station = 3;
+
+ initial begin
+    // Set all registers to 0 
+    Motor_B_mode = 0;
+    Motor_A_mode = 0;
+    intersected = 0;
+    ms_counter_3 = 0;
+    ms_counter_2 = 0;
+    ms_counter_1 = 0;
+    rotate_timer_1 = 0;
+    rotate_timer_2 = 0;
+    station_timer_1 = 0;
+    Magnet = 1;
+    MagStop = 1;
+end   
+    
+always @ (posedge clk) begin
+        
+    case(state)
+    Forward: begin
+    
+        if (Bumper != 1) begin
+            state = Station;
+        end
+        
+        case(IPS)
+            3'b000: begin
+                state = Intersection;
+            end
+            3'b110: begin           // XXX CBA
+                Motor_B_mode = 5;
+                Motor_A_mode = 5;
+                Direction_B = 0;
+                Direction_A = 1;
+            end 
+            3'b100: begin           // XXX CBA
+                Motor_B_mode = 5;
+                Motor_A_mode = 5;
+                Direction_B = 0;
+                Direction_A = 1;
+            end 
+            3'b101: begin
+                Motor_B_mode = 5;
+                Motor_A_mode = 5;
+                Direction_B = 1;
+                Direction_A = 1;
+            end
+            3'b011: begin
+                Motor_B_mode = 5;
+                Motor_A_mode = 5;
+                Direction_B = 1;
+                Direction_A = 0;
+            end
+            3'b001: begin
+                Motor_B_mode = 5;
+                Motor_A_mode = 5;
+                Direction_B = 1;
+                Direction_A = 0;
+            end
+            3'b111: begin
+
+            end
+            
+        endcase
+    end 
+    
+    Intersection: begin
+    
+  
+               if(intersected == 0) begin
+                     ms_counter_1 = ms_counter_1 + 1;
+                     if(ms_counter_1 > 100000) begin
+                         rotate_timer_1 = rotate_timer_1 + 1;
+                         ms_counter_1 = 0;
+                     end
+                     Motor_B_mode = 5;
+                     Motor_A_mode = 5;
+                     Direction_B = 0;
+                     Direction_A = 1;
+                     if(rotate_timer_1 >= 700) begin
+                        state = Forward;
+                        intersected = 1;
+                     end
+                end
+
+               if(intersected == 1) begin
+                     ms_counter_2 = ms_counter_2 + 1;
+                     if(ms_counter_2 > 100000) begin
+                         rotate_timer_2 = rotate_timer_2 + 1;
+                         ms_counter_2 = 0;
+                     end
+                         Motor_B_mode = 5;
+                         Motor_A_mode = 5;
+                         Direction_B = 1;
+                         Direction_A = 1;
+                     if(rotate_timer_2 >= 700) begin
+                        state = Forward;
+                        intersected = 2;
+                     end
+                end
+    end
+    
+    Station: begin
+           ms_counter_3 = ms_counter_3 + 1;
+           if(ms_counter_3 > 100000) begin
+               station_timer_1 = station_timer_1 + 1;
+               ms_counter_3 = 0;
+           end  
+              
+           Motor_B_mode = 5;
+           Motor_A_mode = 5;
+           Direction_B = 1;
+           Direction_A = 1;
+           if(station_timer_1 == 100) begin
+             Magnet = ~Magnet; 
+           end            
+           if(station_timer_1 >= 800) begin
+             station_timer_1 = 0;
+             state = Forward;
+
+           end 
+    end
+    endcase
+    
+ 
+end
+endmodule
