@@ -1,1 +1,69 @@
+`timescale 1ns / 1ps
 
+module top(
+    input clk,
+    input wire OFF,
+    input wire Comparator,
+    input wire [2:0] IPS,
+    input wire Bumper,
+    input wire OCOFF,
+    
+    output wire PWM_A,
+    output wire Forward_A,
+    output wire Backward_A,
+    output wire PWM_B,
+    output wire Forward_B,
+    output wire Backward_B,
+    output wire Magnet
+    );
+    
+ wire new_clock;
+ 
+ 
+
+Motor_A m_A(
+        //inputs
+        .clk(clk), 
+        .new_clock(new_clock),
+        .Direction(Direction_A),
+        .Comparator(Comparator),
+        .motor_mode(Motor_A_mode),
+        .OFF(OFF),
+        .OCOFF(OCOFF),
+        //outputs
+        .PWM(PWM_A),
+        .Forward(Forward_A),
+        .Backward(Backward_A),
+        .MagStop(MagStop)
+    );
+
+Motor_A m_B(
+        //inputs
+        .clk(clk), 
+        .new_clock(new_clock),
+        .Direction(Direction_B),
+        .Comparator(Comparator),
+        .motor_mode(Motor_B_mode),
+        .OFF(OFF),
+        .OCOFF(OCOFF),      
+        //outputs
+        .PWM(PWM_B),
+        .Forward(Forward_B),
+        .Backward(Backward_B),
+        .MagStop(MagStop)
+    );
+    
+IPS_Controls ips_controls(    
+    //inputs
+    .clk(clk),
+    .IPS(IPS),
+    .Bumper(Bumper),  
+    //outputs
+    .Motor_B_mode(Motor_B_mode),
+    .Motor_A_mode(Motor_A_mode),
+    .Direction_A(Direction_A),
+    .Direction_B(Direction_B),
+    .Magnet(Magnet),
+    .MagStop(MagStop)
+    );
+endmodule
