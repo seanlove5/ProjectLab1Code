@@ -1,1 +1,97 @@
+`timescale 1ns / 1ps
 
+
+module Motor_A(
+    input clk, // clock 100MHz
+    input new_clock,
+    input Direction, // Switch 1-2 used for motor A direction  
+    input Comparator,
+    input motor_mode,
+    input OFF,
+    input MagStop,
+    input OCOFF,
+    
+    output reg PWM, // PWM signal  JA1 pin to ENA
+    output reg Forward, // 3.3V  JA2 pin to IN2
+    output reg Backward // 3.3V  JA3 pin to IN1
+    );
+    
+reg Enable; // Enabling Speed register
+reg[27:0] ms_counter_4 = 0;
+reg[15:0] station_timer_2 = 0;
+localparam NOC = 1;
+localparam OC = 2;
+reg[4:0] state = NOC;
+
+initial begin
+    Enable = 1;
+    ms_counter_4 = 0;
+    station_timer_2 = 0;
+end
+
+
+always @ (posedge clk) begin
+
+if (OCOFF == 1) 
+  case(state)
+    NOC: begin  
+        case(Comparator)      
+            2'b0: begin
+             
+                Enable <= 1;
+            end 
+            2'b1: begin
+               state = OC;
+            end
+            default : begin
+               Enable <= 1;
+            end
+           
+        endcase
+    end
+    
+    OC: begin
+        ms_counter_4 = ms_counter_4 + 1;
+         if(ms_counter_4 > 100000) begin
+             station_timer_2 = station_timer_2 + 1;
+             ms_counter_4 = 0;
+         end  
+                  
+         Enable <= 0;  
+                       
+         if(station_timer_2 >= 1500) begin
+             station_timer_2 = 0;
+             state = NOC;
+         end 
+    end
+    endcase
+    
+    else 
+        Enable = 1;
+end
+
+
+always @ (posedge clk) begin
+        // case statements 
+        case(Direction)
+            2'b1 : begin 
+                Forward <= 1;
+                Backward <= 0;
+            end   
+            2'b0 : begin
+                Forward <= 0;
+                Backward <= 1;
+            end
+            default : begin
+                Forward <= 1;
+                Backward <= 0;
+            end
+        endcase   
+  
+         if (Enable == 1 && OFF == 0 && MagStop == 1) 
+             PWM = 1;  
+         else
+             PWM = 0;   
+end      
+
+endmodule
